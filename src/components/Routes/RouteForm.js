@@ -24,7 +24,6 @@ export default function RouteForm({ routeAdded }) {
         } catch (err) {
             console.error(err);
         }
-        console.log(name, link);
     };
 
     return (
@@ -47,7 +46,7 @@ export default function RouteForm({ routeAdded }) {
                         <textarea
                             type="text"
                             name="Raw"
-                            value={link}
+                            value={raw}
                             className="form-control"
                             onChange={(e) => setRaw(e.target.value)}
                         />

@@ -2,9 +2,12 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import CourseList from './components/CourseList';
 import CourseForm from './components/CourseForm';
+import RouteForm from './components/Routes/RouteForm';
+import RouteList from './components/Routes';
 
 function App() {
     const [courses, setCourses] = useState([]);
+    const [routes, setRoutes] = useState([]);
 
     const loadCourses = async () => {
         try {
@@ -15,16 +18,34 @@ function App() {
             console.error(error);
         }
     };
+    const loadRoutes = async () => {
+        try {
+            const res = await fetch('/api/routes');
+            const routes = await res.json();
+            setRoutes(routes);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     useEffect(() => {
         loadCourses();
+        loadRoutes();
     }, []);
     return (
-        <div className="container mt-5">
-            <h1 className="mb-5 text-center">Course Tracker</h1>
-            <CourseForm courseAdded={loadCourses} />
-            <CourseList courses={courses} refreshCourses={loadCourses} />
-        </div>
+        <>
+
+            <div className="container mt-5">
+                <h1 className="mb-5 text-center">Route Tracker</h1>
+                <RouteForm routeAdded={loadRoutes} />
+                <RouteList routes={routes} refreshRoutes={loadRoutes} />
+            </div>
+            <div className="container mt-5">
+                <h1 className="mb-5 text-center">Course Tracker</h1>
+                <CourseForm courseAdded={loadCourses} />
+                <CourseList courses={courses} refreshCourses={loadCourses} />
+            </div>
+        </>
     );
 }
 

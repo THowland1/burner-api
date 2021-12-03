@@ -1,8 +1,7 @@
 const { routes } = require('../airtable');
 const formattedReturn = require('../formattedReturn');
-module.exports = async (event) => {
+module.exports = async (event, id) => {
     try {
-        const { id } = JSON.parse(event.body);
         const routeData = await routes.find(id);
         return formattedReturn(200, routeData);
     } catch (err) {

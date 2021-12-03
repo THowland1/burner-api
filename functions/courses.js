@@ -1,11 +1,20 @@
 const formattedReturn = require('./helpers/formattedReturn');
 const getCourses = require('./helpers/getCourses');
+const getCourse = require('./helpers/getCourses');
 const createCourse = require('./helpers/createCourse');
 const deleteCourse = require('./helpers/deleteCourse');
 const updateCourse = require('./helpers/updateCourse');
 exports.handler = async (event) => {
     if (event.httpMethod === 'GET') {
-        return await getCourses(event);
+        const pathSegments = event.path.split('/');
+        const lastPathSegment = pathSegments[pathSegments.length - 1];
+        if (lastPathSegment.includes('rec')) {
+
+            return await getCourse(event, lastPathSegment);
+        } else {
+
+            return await getCourses(event);
+        }
     } else if (event.httpMethod === 'POST') {
         return await createCourse(event);
     } else if (event.httpMethod === 'PUT') {

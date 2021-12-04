@@ -10,6 +10,11 @@
     "airtable": "^0.8.1",
     "bootstrap": "^4.5.0",
     "dotenv": "^8.2.0",
+    "just-has": "^2.0.1",
+    "just-pick": "^4.0.1",
+    "just-safe-get": "^4.0.1",
+    "just-sort-by": "^3.0.1",
+    "odata-parser": "^1.4.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.1"

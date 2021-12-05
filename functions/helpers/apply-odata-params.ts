@@ -1,7 +1,5 @@
 import parser from 'odata-parser';
-import pick from 'just-pick';
 import safeGet from 'just-safe-get';
-import has from 'just-has';
 import { ISortCondition, sortByAll } from './sortByAll';
 import { deepPick } from './deepPick';
 import get from 'just-safe-get';

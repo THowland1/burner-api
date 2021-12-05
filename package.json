@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@netlify/functions": "^0.10.0",
-    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/jest-dom": "^5.16.0",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
     "airtable": "^0.8.1",
@@ -17,13 +17,15 @@
     "odata-parser": "^1.4.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.1"
+    "react-scripts": "3.4.1",
+    "ts-jest": "^27.0.7"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test:functions": "jest ./functions"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -41,6 +43,11 @@
     ]
   },
   "devDependencies": {
-    "@types/airtable": "^0.10.1"
+    "@types/airtable": "^0.10.1",
+    "@types/jest": "^27.0.3",
+    "@types/testing-library__jest-dom": "^5.14.2",
+    "babel-jest": "^27.4.2",
+    "jest": "^27.4.3",
+    "typescript": "^4.5.2"
   }
 }

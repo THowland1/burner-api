@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "types": ["reflect-metadata", "jest"],
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "esModuleInterop": true,
+    "jsx": "react",
+    "lib": ["es2017", "dom"]
+  },
+  "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"],
+  "include": ["./src/**/*.tsx", "./src/**/*.ts"],
+  "types": ["node", "jest", "@testing-library/jest-dom"]
+}

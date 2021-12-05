@@ -7,40 +7,59 @@ import has from 'just-has';
 const NAVIGATION_DELIMITER = '/';
 
 type ODataParams = {
-  $filter?: undefined;
-  $orderby?: string | undefined;
-  $select?: string[];
-  $skip?: number;
-  $top?: number;
+  $filter: $Filter;
+  $orderby: Record<string, 'asc' | 'desc'>[];
+  $select: string[];
+  $skip: number;
+  $top: number;
 };
 
-function validateTopAndSkip<T>(data: T[], { $top, $skip }: ODataParams) {
+type ODataValidate<K extends keyof ODataParams> = <T>(
+  data: T[],
+  params: Pick<ODataParams, K>
+) => void;
+type ODataTransform<K extends keyof ODataParams> = <T>(
+  data: T[],
+  params: Pick<ODataParams, K>
+) => T[];
+
+const validateTopAndSkip: ODataValidate<'$top' | '$skip'> = (
+  data,
+  { $top, $skip }
+) => {
   if (typeof $top === 'number' && typeof $skip === 'number') {
     return data;
   }
-}
-function applyTopAndSkip<T>(data: T[], { $top, $skip }: ODataParams) {
+};
+const applyTopAndSkip: ODataTransform<'$top' | '$skip'> = (
+  data,
+  { $top, $skip }
+) => {
   return data.slice($skip, $skip + $top);
-}
+};
 
-function validateOrderby<T>(data: T[], { $orderby }: ODataParams) {
+const validateOrderby: ODataValidate<'$orderby'> = (_, { $orderby }) => {
   if (typeof $orderby !== 'string') {
     throw new Error('$orderby must be a string');
   }
   // TODO - validate against shallow non-prop keys
-  if (has(data[0], $orderby.split(NAVIGATION_DELIMITER))) {
-    throw new Error('$orderby must only be a key of the object');
-  }
+  // if (has(data[0], $orderby.split(NAVIGATION_DELIMITER))) {
+  //   throw new Error('$orderby must only be a key of the object');
+  // }
   // TODO - validate against deep non-prop keys
-  if (false) {
-    throw new Error('$orderby must only be a key of the object');
-  }
-}
-function applyOrderby<T>(data: T[], { $orderby }: ODataParams) {
-  return sortBy(data, (o) => safeGet(o, $orderby));
-}
+  // if (false) {
+  //   throw new Error('$orderby must only be a key of the object');
+  // }
+};
+// TODO  support thenby
+const applyOrderby: ODataTransform<'$orderby'> = (data, { $orderby }) => {
+  const [prop, order] = Object.entries($orderby[0])[0];
+  const dataSortedByAsc = sortBy(data, (o) => safeGet(o, prop));
 
-function validateSelect<T>(_: T[], { $select }: ODataParams) {
+  return order === 'asc' ? dataSortedByAsc : dataSortedByAsc.reverse();
+};
+
+const validateSelect: ODataValidate<'$select'> = (data, { $select }) => {
   if (!Array.isArray($select)) {
     throw new Error('$select must be an array');
   }
@@ -50,131 +69,146 @@ function validateSelect<T>(_: T[], { $select }: ODataParams) {
   if (false) {
     throw new Error('$select must only contain keys of the object');
   }
-}
-function applySelect<T>(data: T[], { $select }: ODataParams) {
-  return data.map((arrItem) => pick(arrItem, $select as (keyof T)[]));
-}
+};
+const applySelect: ODataTransform<'$select'> = (data, { $select }) => {
+  return data.map((arrItem) =>
+    pick(arrItem, $select as (keyof typeof arrItem)[])
+  );
+};
 
 // TODO - Support $filter
-function validateFilter<T>(data: T[], { $filter }: ODataParams) {
+const validateFilter: ODataValidate<'$filter'> = (_, { $filter }) => {
   if (typeof $filter !== 'object') {
     throw new Error('$filter must be an object');
   }
-}
+};
 // TODO - Support $filter
-function applyFilter<T>(data: T[], { $filter }: ODataParams) {
+const applyFilter: ODataTransform<'$filter'> = (data, { $filter }) => {
   return data;
-}
+};
 
-function parseODataQueryString<T>(odataQueryString: string) {
-  const odataQueryParams: ODataParams = {
-    $filter: undefined,
-    $orderby: undefined,
-    $select: [],
+function parseODataQueryString(odataQueryString: string) {
+  const defaults: Partial<ODataParams> = {
     $skip: 0,
     $top: 10,
-    ...parser.parse(odataQueryString),
   };
-  return odataQueryParams;
+  // TODO remove non-OData params
+  const parsed: Partial<ODataParams> = odataQueryString
+    ? parser.parse(odataQueryString)
+    : {};
+
+  return { ...defaults, ...parsed };
 }
 
 export function applyODataParams<T>(data: T[], odataQueryString: string) {
-  const odataQueryParams = parseODataQueryString(odataQueryString);
+  const { $filter, $orderby, $select, $skip, $top } =
+    parseODataQueryString(odataQueryString);
 
   let res = [...data];
 
-  validateTopAndSkip(res, odataQueryParams);
-  res = applyTopAndSkip(res, odataQueryParams);
+  if ($orderby !== undefined) {
+    validateOrderby(res, { $orderby });
+    res = applyOrderby(res, { $orderby });
+  }
 
-  validateOrderby(res, odataQueryParams);
-  res = applyOrderby(res, odataQueryParams);
+  if ($select !== undefined) {
+    validateSelect(res, { $select });
+    res = applySelect(res, { $select });
+  }
 
-  validateSelect(res, odataQueryParams);
-  res = applySelect(res, odataQueryParams);
+  if ($filter !== undefined) {
+    validateFilter(res, { $filter });
+    res = applyFilter(res, { $filter });
+  }
 
-  validateFilter(res, odataQueryParams);
-  res = applyFilter(res, odataQueryParams);
+  if ($skip !== undefined && $top !== undefined) {
+    validateTopAndSkip(res, { $skip, $top });
+    res = applyTopAndSkip(res, { $skip, $top });
+  }
 
   return res;
 }
 
-// type PropertyOperand = {
-//   type: "property";
-//   name: string;
-// };
-// type LiteralOperand = {
-//   type: "literal";
-//   value: any;
-// };
-// type Operand = PropertyOperand | LiteralOperand;
+type PropertyOperand = {
+  type: 'property';
+  name: string;
+};
+type LiteralOperand = {
+  type: 'literal';
+  value: any;
+};
+type Operand = PropertyOperand | LiteralOperand;
 
-// type EQFilter = {
-//   type: "eq";
-//   left: Operand;
-//   right: Operand;
-// };
-// type LTFilter = {
-//   type: "lt";
-//   left: Operand;
-//   right: Operand;
-// };
-// type GTFilter = {
-//   type: "gt";
-//   left: Operand;
-//   right: Operand;
-// };
-// type LEFilter = {
-//   type: "le";
-//   left: Operand;
-//   right: Operand;
-// };
-// type GEFilter = {
-//   type: "ge";
-//   left: Operand;
-//   right: Operand;
-// };
-// type NEFilter = {
-//   type: "ne";
-//   left: Operand;
-//   right: Operand;
-// };
-// type SubstringofFilter = {
-//   type: "functioncall";
-//   func: "substringof";
-//   args: [Operand, Operand];
-// };
-// type StartswithFilter = {
-//   type: "functioncall";
-//   func: "startswith";
-//   args: [Operand, Operand];
-// };
-// type EndswithFilter = {
-//   type: "functioncall";
-//   func: "endswith";
-//   args: [Operand, Operand];
-// };
-// type AndFilter = {
-//   type: "and";
-//   left: Filter;
-//   right: Filter;
-// };
-// type OrFilter = {
-//   type: "or";
-//   left: Filter;
-//   right: Filter;
-// };
-// type Filter =
-//   | EQFilter
-//   | LTFilter
-//   | GTFilter
-//   | SubstringofFilter
-//   | AndFilter
-//   | OrFilter;
+type EQFilter = {
+  type: 'eq';
+  left: Operand;
+  right: Operand;
+};
+type LTFilter = {
+  type: 'lt';
+  left: Operand;
+  right: Operand;
+};
+type GTFilter = {
+  type: 'gt';
+  left: Operand;
+  right: Operand;
+};
+type LEFilter = {
+  type: 'le';
+  left: Operand;
+  right: Operand;
+};
+type GEFilter = {
+  type: 'ge';
+  left: Operand;
+  right: Operand;
+};
+type NEFilter = {
+  type: 'ne';
+  left: Operand;
+  right: Operand;
+};
+type SubstringofFilter = {
+  type: 'functioncall';
+  func: 'substringof';
+  args: [Operand, Operand];
+};
+type StartswithFilter = {
+  type: 'functioncall';
+  func: 'startswith';
+  args: [Operand, Operand];
+};
+type EndswithFilter = {
+  type: 'functioncall';
+  func: 'endswith';
+  args: [Operand, Operand];
+};
+type AndFilter = {
+  type: 'and';
+  left: Filter;
+  right: Filter;
+};
+type OrFilter = {
+  type: 'or';
+  left: Filter;
+  right: Filter;
+};
+type Filter =
+  | EQFilter
+  | LTFilter
+  | GTFilter
+  | NEFilter
+  | SubstringofFilter
+  | AndFilter
+  | OrFilter
+  | StartswithFilter
+  | EndswithFilter;
 
-// type $Filter = {
-//   type: string;
-//   left: {
-//     type: string;
-//     value: string;
-//   };
-// };
+type $Filter = {
+  type: string;
+  left: {
+    type: string;
+    value: string;
+  };
+};

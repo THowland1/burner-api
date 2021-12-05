@@ -13,6 +13,7 @@
     "just-has": "^2.0.1",
     "just-pick": "^4.0.1",
     "just-safe-get": "^4.0.1",
+    "just-safe-set": "^4.0.1",
     "just-sort-by": "^3.0.1",
     "odata-parser": "^1.4.1",
     "react": "^16.13.1",
